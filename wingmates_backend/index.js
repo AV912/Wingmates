@@ -48,13 +48,15 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.post('/api/persons', (req, res) => {
-    console.log("posting person")
     const body = req.body
+    console.log("posting person", body)
     if(body.uid === undefined) {
-        return res.status(400).json({error: 'content missing'})
+        console.log("uid missing")
+        return res.status(400).statusMessage("uid missing")
     }
     if (Person.find({uid: body.uid}) !== null) {
-        return res.status(400).json({error: 'person already exists'})
+        console.log("person already exists")
+        return res.status(400).statusMessage("person already exists")
     }
     const newPerson = new Person({
         uid: body.uid,
