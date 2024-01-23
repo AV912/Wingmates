@@ -54,7 +54,8 @@ app.post('/api/persons', (req, res) => {
         console.log("uid missing")
         return res.status(400).statusMessage("uid missing")
     }
-    if (Person.find({uid: body.uid}) !== null) {
+    
+    if (Person.find({uid: body.uid}).length > 0) {
         console.log("person already exists")
         return res.status(400).statusMessage("person already exists")
     }
