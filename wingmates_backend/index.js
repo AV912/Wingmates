@@ -90,6 +90,10 @@ app.post('/api/flights', (req, res) => {
 
 app.get('/api/flights/:id', (req, res) => {
     FlightInfo.find({flightNumber: req.params.id}).then(flight => {
+        //if flight is not found, return error message
+        if (flight.length === 0) {
+            res.status(404).send("Flight not found")
+        }
         res.json(flight)
     })
 })
