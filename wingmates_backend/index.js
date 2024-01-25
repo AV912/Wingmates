@@ -13,7 +13,7 @@ app.use(express.json())
 
 
 const url = process.env.MONGO_URI  
-console.log(url)
+//console.log(url)
 
 mongoose.connect(url)
 mongoose.set('strictQuery', false)
