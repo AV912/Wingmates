@@ -93,8 +93,9 @@ app.get('/api/flights/:id', (req, res) => {
         //if flight is not found, return error message
         if (flight.length === 0) {
             res.status(404).send("Flight not found")
+        } else {
+            res.json(flight)
         }
-        res.json(flight)
     })
 })
 
