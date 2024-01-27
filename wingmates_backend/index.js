@@ -1,4 +1,3 @@
-const getRandomFutureDayAndTimes = require('./FlightDate.js')
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -27,6 +26,7 @@ const flightInfoSchema = new mongoose.Schema({
     departureDate: String,
     departureTime: String,
     arrivalAirport: String,
+    arrivalDate: String,
     arrivalTime: String,
     airplane: String,
 })
@@ -51,10 +51,6 @@ app.get('/api/flights', (req, res) => {
 
 app.post('/api/flights', (req, res) => {
     //create a fake flight 
-    function getRandomElement(array) {
-        const randomIndex = Math.floor(Math.random() * array.length);
-        return array[randomIndex];
-    }
     
     function generateRandomAlphanumeric(length) {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -65,21 +61,121 @@ app.post('/api/flights', (req, res) => {
         return result;
     }
     
-    const flightTime = getRandomFutureDayAndTimes()
-    const airlines = ['American'];
-    const departureAirports = ['JFK', 'LAX', 'ORD', 'ATL', 'DFW'];
-    const arrivalAirports = ['SFO', 'DEN', 'SEA', 'MIA', 'LAS'];
-    const airplanes = ['Boeing 737', 'Airbus A320', 'Boeing 777', 'Embraer E190', 'Airbus A380'];
-  
+
+
+    const aircraft = {
+        model: 'Boeing 777',
+        speed: 645,
+    }
+
+    const airportCodes = {
+        'MEX': { latitude: 19.4363, longitude: -99.0721 }, // Benito Juárez International Airport, Mexico City
+        'CDG': { latitude: 49.0034, longitude: 2.5735 },    // Charles de Gaulle Airport, Paris
+        'HND': { latitude: 35.5521, longitude: 139.7798 },  // Tokyo Haneda Airport, Tokyo
+        'DEL': { latitude: 28.5562, longitude: 77.1000 },   // Indira Gandhi International Airport, Delhi
+        'FRA': { latitude: 50.0333, longitude: 8.5706 },    // Frankfurt Airport, Frankfurt
+        'DFW': { latitude: 32.8998, longitude: -97.0403 },  // Dallas/Fort Worth International Airport, Dallas
+        'LHR': { latitude: 51.4694, longitude: -0.4543 }    // Heathrow Airport, London
+    };
+
+    function selectAirports(airportMap) {
+        const airports = Object.keys(airportMap);
+        const randomIndex1 = Math.floor(Math.random() * airports.length);
+        let randomIndex2;
+        
+        do {
+            randomIndex2 = Math.floor(Math.random() * airports.length);
+        } while (randomIndex2 === randomIndex1);
+    
+        const airport1 = airports[randomIndex1];
+        const airport2 = airports[randomIndex2];
+    
+        return [airport1, airport2];
+    }
+
+    const [depAir, arrAir] = selectAirports(airportCodes);
+
+    // Function to calculate the distance between two points using the haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180; // Convert degrees to radians
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c; // Distance in kilometers
+        return distance;
+    }
+
+    // Function to calculate the time to travel between two airports
+    function calculateTravelTime(airport1, airport2, speed) {
+        // Retrieve coordinates for the airports
+        const coordinates1 = airportCodes[airport1];
+        const coordinates2 = airportCodes[airport2];
+
+        // Calculate the distance between the two airports
+        const distance = calculateDistance(coordinates1.latitude, coordinates1.longitude, coordinates2.latitude, coordinates2.longitude);
+        
+        // Convert kilometers to miles
+        const distanceInMiles = Math.round(distance * 0.621371);
+        // Calculate the time to travel (time = distance / speed)
+        const timeInHours = distanceInMiles / speed;
+
+        return timeInHours;
+    }
+
+    const timeBetweenAirports = calculateTravelTime(depAir, arrAir, aircraft.speed);
+
+    function pickRandomDepartureAndCalculateArrival(hours) {
+        // Get the current date and time in UTC
+        const currentDate = new Date();
+        const currentYear = currentDate.getUTCFullYear();
+        const currentMonth = currentDate.getUTCMonth();
+
+        // Calculate the UTC timestamp for the same day next 3 months
+        const threeMonthsFromNow = new Date(Date.UTC(currentYear, currentMonth + 3, 1)); // Next month
+        threeMonthsFromNow.setUTCHours(0, 0, 0, 0); // Start of the day
+
+        // Calculate the UTC timestamp for today
+        const currentUTC = currentDate.getTime();
+        const nextThreeMonthsUTC = threeMonthsFromNow.getTime();
+
+        // Generate a random departure date and time within the next 3 months
+        const randomDepartureUTC = currentUTC + Math.random() * (nextThreeMonthsUTC - currentUTC);
+        const randomDepartureDate = new Date(randomDepartureUTC);
+
+        // Calculate the arrival time based on the departure time and the specified hours
+        const arrivalUTC = randomDepartureUTC + hours * 60 * 60 * 1000;
+        const arrivalDate = new Date(arrivalUTC);
+
+        console.log("departure date", randomDepartureDate)
+        console.log("arrival date", arrivalDate)
+
+
+        // Ensure arrival time is not earlier than departure time
+        if (arrivalDate < randomDepartureDate) {
+            arrivalDate.setTime(arrivalDate.getTime() + 24 * 60 * 60 * 1000); // Add one day
+        }
+
+        return [randomDepartureDate, arrivalDate];
+    }
+
+
+    const [depDate, arrDate] = pickRandomDepartureAndCalculateArrival(timeBetweenAirports);
+
+
+
     const fakeFlightInfo = new FlightInfo({
-        airline: getRandomElement(airlines),
+        airline: "American Airlines",
         flightNumber: generateRandomAlphanumeric(6).toUpperCase(),
-        departureAirport: getRandomElement(departureAirports),
-        arrivalAirport: getRandomElement(arrivalAirports),
-        airplane: getRandomElement(airplanes),
-        departureDate: flightTime.randomDay,
-        departureTime: flightTime.randomTime1,
-        arrivalTime: flightTime.randomTime2,
+        departureAirport: depAir,
+        arrivalAirport: arrAir,
+        airplane: aircraft.model,
+        departureDate: depDate.toISOString().split('T')[0],
+        departureTime: depDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
+        arrivalDate: arrDate.toISOString().split('T')[0],
+        arrivalTime: arrDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
     })
 
     fakeFlightInfo.save().then(savedFlight => {
