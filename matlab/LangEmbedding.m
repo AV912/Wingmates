@@ -1,8 +1,8 @@
 % import dataset and trim to have a vector of country names
-opts = detectImportOptions("../languages.csv");
-opts = setvartype(opts, ["Language"], 'string');
-opts.SelectedVariableNames = ["Language"];
-countries = table2array(readtable('../languages.csv', opts));
+opts = detectImportOptions("../countries.csv");
+opts = setvartype(opts, ["name"], 'string');
+opts.SelectedVariableNames = ["name"];
+countries = table2array(readtable('../countries.csv', opts));
 
 % word2vec embedding variable
 emb = fastTextWordEmbedding;
@@ -19,4 +19,4 @@ for i=1:num_countries
     end
 end
 
-save("language_dots.mat","dot_vals")
+save("country_dots.mat","dot_vals")
