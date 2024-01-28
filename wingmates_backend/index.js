@@ -316,6 +316,16 @@ app.delete('/api/persons/:id/flights', (req, res) => {
 }
 )
 
+app.get('/api/persons/withflights/:flightId', (req, res) => {
+    //find all persons with flightId in their flights array
+    console.log("flightId", req.params.flightId)
+    Person.find({}).populate('flights').then(persons => {
+        const filteredPersons = persons.filter(person => person.flights.some(flight => flight.flightNumber === req.params.flightId))
+        res.json(filteredPersons)
+    })
+
+})  
+
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
