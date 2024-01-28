@@ -291,6 +291,12 @@ app.put('/api/persons/:id', (req, res) => {
 
 app.get('/api/persons/:id/flights', (req, res) => {
     Person.find({uid: req.params.id}).populate('flights').then(person => {
+        if (!person) {
+            return res.status(404).end()
+        }
+        if (person.length === 0) {
+            return res.status(404).end()
+        }
         res.json(person[0].flights)
     })
 })
@@ -356,6 +362,8 @@ app.post('/api/persons/matches', (req, res) => {
         }
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
+        //create a new match object
+        
         res.json(stdout)
     })
 
