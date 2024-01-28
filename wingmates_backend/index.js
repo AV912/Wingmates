@@ -1,3 +1,4 @@
+const { exec } = require('child_process');
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -325,6 +326,42 @@ app.get('/api/persons/withflights/:flightId', (req, res) => {
     })
 
 })  
+
+// run python script to get list of matches for user
+app.post('/api/persons/matches', (req, res) => {
+    //two users are passed in as an array of objects
+    console.log("entered matches route")
+    console.log(req.body)
+    const user1 = req.body[0]
+    const user2 = req.body[1]
+    console.log(user1)
+    console.log(user2)
+    console.log("running python script")
+    function formatUserFields(user1, user2) {
+        // Concatenate user fields into a single string
+        let user1String = `${user1.nationality}|${user1.gender}|${user1.language}|${user1.age}`;
+        let user2String = `${user2.nationality}|${user2.gender}|${user2.language}|${user2.age}`;
+    
+        // Combine user strings
+        let combinedString = `"${user1String}|${user2String}"`;
+    
+        return combinedString;
+    }
+    const args = formatUserFields(user1, user2)
+    console.log(args)
+    exec(`python3 ./match_score.py ${args}`, (err, stdout, stderr) => {
+        if (err) {
+            console.log(err)
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+        res.json(stdout)
+    })
+
+})
+
+
 
 
 const PORT = process.env.PORT || 3001
