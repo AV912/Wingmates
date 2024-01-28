@@ -295,7 +295,7 @@ app.get('/api/persons/:id/flights', (req, res) => {
             return res.status(404).end()
         }
         if (person.length === 0) {
-            return res.status(404).end()
+            return res.json([])
         }
         res.json(person[0].flights)
     })
